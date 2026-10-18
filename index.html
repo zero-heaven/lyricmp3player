@@ -90,23 +90,23 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px;
   <div class="container">
     <div class="player-card" role="application" aria-label="Lyrics MP3 Player">
       <div class="track-info">
-        <div class="track-title" id="displayTitle">未載入歌曲</div>
+        <div class="track-title" id="displayTitle">No song loaded</div>
         <div class="track-artist" id="displayArtist">—</div>
         <div class="track-meta" id="displayMeta">Genre: — | Album: —</div>
       </div>
 
       <div class="lyrics-wrap" id="lyricsWrap">
-        <div id="btnPlaylistToggle" class="playlist-emoji" aria-expanded="false" title="播放清單">🎶</div>
+        <div id="btnPlaylistToggle" class="playlist-emoji" aria-expanded="false" title="Playlist">🎶</div>
         <div class="lyrics-bg" id="lyricsBg"></div>
         <div class="lyrics-container mode-karaoke" id="lyricsContainer">
-          <div class="lyric-line" style="margin-top:60px;color:var(--muted)">等待播放…</div>
+          <div class="lyric-line" style="margin-top:60px;color:var(--muted)">Waiting to play…</div>
         </div>
 
-        <div id="playlistOverlay" class="playlist-overlay" aria-hidden="true" role="region" aria-label="播放清單 (覆蓋)">
-          <div class="panel" role="dialog" aria-modal="false" aria-label="播放清單面板">
+        <div id="playlistOverlay" class="playlist-overlay" aria-hidden="true" role="region" aria-label="Playlist (Overwrite)">
+          <div class="panel" role="dialog" aria-modal="false" aria-label="Playlist Panel">
             <div class="header">
-              <div class="title">播放清單 (<span id="queueCount">0</span>)</div>
-              <button id="btnCloseOverlay" class="btn" title="關閉播放清單" aria-label="Close playlist">
+              <div class="title">Playlist (<span id="queueCount">0</span>)</div>
+              <button id="btnCloseOverlay" class="btn" title="Close playlist" aria-label="Close playlist">
                 <svg class="icon" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
               </button>
             </div>
@@ -116,14 +116,14 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px;
       </div>
 
       <div class="row slider-row" aria-hidden="false" style="margin-top:6px;">
-        <label for="bgOpacitySlider">背景透明</label>
-        <input id="bgOpacitySlider" type="range" min="0" max="100" value="28" aria-label="背景透明度">
+        <label for="bgOpacitySlider">Transparent bg</label>
+        <input id="bgOpacitySlider" type="range" min="0" max="100" value="28" aria-label="Background transparency">
         <div style="width:8px"></div>
-        <label for="bgBlurSlider">背景模糊</label>
-        <input id="bgBlurSlider" type="range" min="0" max="20" value="0" aria-label="背景模糊">
+        <label for="bgBlurSlider">Bg blur</label>
+        <input id="bgBlurSlider" type="range" min="0" max="20" value="0" aria-label="Background blur">
         <div style="width:8px"></div>
-        <label for="volumeSlider">音量</label>
-        <input id="volumeSlider" type="range" min="0" max="100" value="100" aria-label="音量">
+        <label for="volumeSlider">🔊</label>
+        <input id="volumeSlider" type="range" min="0" max="100" value="100" aria-label="Volume">
       </div>
 
       <div class="preset-row">
@@ -150,13 +150,13 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px;
       </div>
 
       <div class="controls-row" role="toolbar" aria-label="Player controls">
-        <button id="btnRandom" class="btn" title="隨機播放" aria-pressed="false"></button>
-        <button id="btnPrev" class="btn" title="上一首"></button>
-        <button id="btnPlayPause" class="btn btn-play" title="播放/暫停" aria-pressed="false"></button>
-        <button id="btnNext" class="btn" title="下一首"></button>
-        <button id="btnRepeat" class="btn" title="循環模式" aria-pressed="true"></button>
-        <button id="btnMode" class="btn" title="切換高亮模式" aria-pressed="false"></button>
-        <button id="btnSync" class="btn" title="歌詞同步" aria-pressed="true"></button>
+        <button id="btnRandom" class="btn" title="Shuffle Play" aria-pressed="false"></button>
+        <button id="btnPrev" class="btn" title="Previous"></button>
+        <button id="btnPlayPause" class="btn btn-play" title="Play/Pause" aria-pressed="false"></button>
+        <button id="btnNext" class="btn" title="Next"></button>
+        <button id="btnRepeat" class="btn" title="Loop Mode" aria-pressed="true"></button>
+        <button id="btnMode" class="btn" title="Toggle highlight mode" aria-pressed="false"></button>
+        <button id="btnSync" class="btn" title="Lyrics Synchronization" aria-pressed="true"></button>
       </div>
     </div>
   </div>
@@ -292,7 +292,7 @@ function renderLyricsUI(lyricsArray){
   lyricsContainer.innerHTML = '';
   if(visualMode===0){ lyricsContainer.classList.add('mode-karaoke'); lyricsContainer.classList.remove('mode-whole'); }
   else { lyricsContainer.classList.add('mode-whole'); lyricsContainer.classList.remove('mode-karaoke'); }
-  if(!lyricsArray || lyricsArray.length===0){ lyricsContainer.innerHTML = '<div style="margin-top:60px;color:var(--muted);text-align:center">🎵 本歌曲目前無同步歌詞 🎵</div>'; return; }
+  if(!lyricsArray || lyricsArray.length===0){ lyricsContainer.innerHTML = '<div style="margin-top:60px;color:var(--muted);text-align:center">🎵 There are currently no synchronized lyrics for this song. 🎵</div>'; return; }
   for(var i=0;i<lyricsArray.length;i++){
     (function(idx){
       var item = lyricsArray[idx];

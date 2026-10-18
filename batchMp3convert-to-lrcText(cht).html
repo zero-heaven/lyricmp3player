@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" >
+    <title>LRC 批次轉換播放清單工具</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 30px; background: #f4f6f9; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        h2 { margin-top: 0; color: #111; text-align: center; }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; color: #555; }
+        .input-group input { width: 100%; padding: 12px; border: 2px solid #4A90E2; border-radius: 6px; box-sizing: border-box; font-size: 15px; font-weight: 500; color: #333; }
+        #drop-zone { border: 3px dashed #4A90E2; padding: 40px 20px; text-align: center; background: #f8faff; cursor: pointer; border-radius: 8px; transition: all 0.2s ease; color: #4A90E2; font-weight: 500; }
+        #drop-zone.hover { border-color: #2ecc71; background: #ebf9eb; color: #2ecc71; }
+        button { display: block; width: 100%; background: #4A90E2; color: white; padding: 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 20px; transition: background 0.2s; }
+        button:hover:not(:disabled) { background: #357ABD; }
+        button:disabled { background: #cccccc; cursor: not-allowed; }
+        #file-list { margin-top: 20px; font-size: 14px; max-height: 200px; overflow-y: auto; background: #f0f2f5; padding: 15px; border-radius: 6px; border: 1px solid #e4e6eb; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>LRC 批次轉換播放清單</h2>
+    
+    <!-- 自訂路徑輸入框（預設填入 mp3/） -->
+    <div class="input-group">
+        <label for="path-prefix">請輸入您想要的資料夾路徑（預設為 mp3/）：</label>
+        <input type="text" id="path-prefix" value="mp3/" placeholder="例如: mp3/ 或 music/classic/">
+    </div>
+
+    <div id="drop-zone">將多個 .lrc 檔案拖曳到此處 <br>或 <strong>點擊瀏覽檔案</strong></div>
+    <input type="file" id="file-input" multiple accept=".lrc" style="display: none;">
+    
+    <div id="file-list">尚未選取任何檔案</div>
+    <button id="export-btn" disabled>轉換並導出 playlist.js</button>
+</div>
+
+<script>
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const exportBtn = document.getElementById('export-btn');
+    const fileListDiv = document.getElementById('file-list');
+    const pathPrefixInput = document.getElementById('path-prefix');
+    
+    let filesArray = [];
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('hover');
+    });
+
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('hover'));
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('hover');
+        handleFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        handleFiles(e.target.files);
+    });
+
+    function handleFiles(files) {
+        filesArray = Array.from(files).filter(file => file.name.toLowerCase().endsWith('.lrc'));
+        if (filesArray.length > 0) {
+            fileListDiv.innerHTML = `<strong>已選取 ${filesArray.length} 個檔案：</strong><br>` + 
+                filesArray.map(f => f.name).join('<br>');
+            exportBtn.disabled = false;
+        } else {
+            fileListDiv.innerHTML = "尚未選取任何有效的 .lrc 檔案。";
+            exportBtn.disabled = true;
+        }
+    }
+
+    exportBtn.addEventListener('click', async () => {
+        let songs = [];
+        // 獲取使用者在文字框輸入的路徑
+        const customPrefix = pathPrefixInput.value.trim();
+
+        for (let file of filesArray) {
+            const text = await file.text();
+            
+            // 使用穩定 slice 機制精準砍掉末尾 4 個字元 ".lrc" 獲取純檔名
+            let baseFileName = file.name;
+            if (baseFileName.toLowerCase().endsWith('.lrc')) {
+                baseFileName = baseFileName.slice(0, -4);
+            }
+            
+            // 解析 LRC 內部的 ID 標籤
+            const tiMatch = text.match(/\[ti:\s*(.*?)\s*\]/i);
+            const arMatch = text.match(/\[ar:\s*(.*?)\s*\]/i);
+            const alMatch = text.match(/\[al:\s*(.*?)\s*\]/i);
+            
+            let title = tiMatch ? tiMatch[1].trim() : "";
+            let artist = arMatch ? arMatch[1].trim() : "";
+            const album = alMatch ? alMatch[1].trim() : ""; 
+
+            // 當歌詞內部無標籤時，自動從純檔名（例如 "歌手 - 歌名"）切分
+            if (!title && !artist) {
+                if (baseFileName.includes("-")) {
+                    const parts = baseFileName.split("-");
+                    artist = parts[0].trim();
+                    title = parts.slice(1).join("-").trim();
+                } else {
+                    title = baseFileName;
+                    artist = "";
+                }
+            } else if (!title) {
+                title = baseFileName;
+            }
+
+            songs.push({
+                title: title,
+                artist: artist,
+                album: album,
+                baseName: baseFileName, 
+                lrcText: text
+            });
+        }
+
+        // 建立符合要求的格式
+        let output = "var playlist = new Array(\n";
+        songs.forEach((song, index) => {
+            const escapedTitle = song.title.replace(/"/g, '\\"');
+            const escapedArtist = song.artist.replace(/"/g, '\\"');
+            const escapedAlbum = song.album.replace(/"/g, '\\"');
+            const escapedBaseName = song.baseName.replace(/"/g, '\\"');
+
+            // 組合自訂路徑 + 純檔名 + 新副檔名
+            const fullSrcName = customPrefix + escapedBaseName + ".mp3";
+            const fullArtName = customPrefix + escapedBaseName + ".jpg";
+
+            output += " {\n";
+            output += `  title: "${escapedTitle}",\n`;
+            output += `  artist: "${escapedArtist}",\n`;
+            output += `  src: "${fullSrcName}",\n`; 
+            output += `  art: "${fullArtName}",\n`; 
+            output += '  genre: "Pop",\n';
+            output += `  album: "${escapedAlbum}",\n`; 
+            output += '  lrcText: `\n';
+            output += song.lrcText.trim() + '\n';
+            output += '`\n';
+            output += " }";
+            if (index < songs.length - 1) {
+                output += ",\n";
+            } else {
+                output += "\n";
+            }
+        });
+        output += ");\n";
+
+        // 強制以 UTF-8 格式導出
+        const blob = new Blob([output], { type: 'application/javascript;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "playlist-lrcText.js");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+</script>
+</body>
+</html>
