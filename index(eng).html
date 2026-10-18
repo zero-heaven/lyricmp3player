@@ -1,0 +1,515 @@
+﻿<!doctype html>
+<html lang="zh-HK">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lyrics MP3 Player — Random Fix</title>
+  <style>
+:root{
+  --accent:#1db954;
+  --bg:#0f0f10;
+  --card:#171717;
+  --muted:#b3b3b3;
+  --lyrics-height:340px;
+  --lyrics-padding:14px;
+  --bg-size:contain;
+  --bg-opacity:0.28;
+  --bg-blur:0px;
+  --lyric-font-scale:1;
+  --overlay-panel-width:620px;
+  --overlay-gap:14px;
+  --emoji-size:44px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{font-family:Inter, "Helvetica Neue", Arial, sans-serif;background:var(--bg);color:#fff;margin:0;padding:18px;display:flex;justify-content:center;align-items:flex-start;}
+.container{width:100%;max-width:1100px;}
+.player-card{width:100%;background:var(--card);border-radius:12px;padding:18px;box-shadow:0 14px 40px rgba(0,0,0,0.6);position:relative;overflow:visible;}
+.track-title{font-size:20px;font-weight:700;margin-bottom:6px}
+.track-artist{font-size:13px;color:var(--muted);margin-bottom:6px}
+.track-meta{font-size:12px;color:var(--muted);margin-bottom:10px}
+.lyrics-wrap{position:relative;border-radius:12px;overflow:hidden;height:var(--lyrics-height);background:linear-gradient(180deg, rgba(0,0,0,0.28), rgba(0,0,0,0.36));margin-bottom:12px}
+.lyrics-bg{position:absolute;inset:0;background:#000 center/var(--bg-size) no-repeat;opacity:var(--bg-opacity);transition:opacity .18s ease,background-size .18s ease,filter .18s ease;filter:blur(var(--bg-blur))}
+.lyrics-container{position:relative;z-index:2;height:100%;overflow-y:auto;padding:var(--lyrics-padding);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:6px;transform:scale(var(--lyric-font-scale));transform-origin:top center}
+.lyric-line{width:100%;padding:6px 12px;text-align:center;border-radius:8px;color:rgba(255,255,255,0.36);cursor:pointer;transition:all .14s ease}
+.lyric-line.active{color:#fff;font-weight:700}
+.mode-karaoke .lyric-line.active{
+  background-image:linear-gradient(to right,var(--accent) var(--progress,0%), rgba(255,255,255,0.95) var(--progress,0%));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.mode-whole .lyric-line.active{color:var(--accent);-webkit-text-fill-color:var(--accent);text-shadow:0 6px 18px rgba(29,185,84,0.12)}
+.row { display:flex; align-items:center; gap:12px; margin-top:10px; flex-wrap:wrap; }
+.slider-row { display:flex; align-items:center; gap:10px; }
+.slider-row label { font-size:12px; color:var(--muted); min-width:72px; }
+input[type="range"] { -webkit-appearance:none; height:6px; background:#2b2b2b; border-radius:6px; width:180px; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--accent); box-shadow:0 2px 6px rgba(0,0,0,0.4); cursor:pointer; }
+.preset-row { margin-top:10px; display:flex; align-items:center; gap:10px; }
+.controls-row{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+.btn{background:linear-gradient(180deg,#2f2f2f,#1b1b1b);border-radius:10px;border:1px solid rgba(255,255,255,0.03);color:#fff;padding:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px}
+.btn-play{background:linear-gradient(180deg,var(--accent),#0a7c3d);min-width:64px;min-height:64px;border-radius:12px}
+.btn.active{color:var(--accent);box-shadow:0 6px 18px rgba(29,185,84,0.08)}
+.icon{width:18px;height:18px;display:inline-block;vertical-align:middle;fill:currentColor;stroke:currentColor}
+.progress-row{display:flex;align-items:center;gap:10px;margin-top:10px}
+.progress-bar{flex:1;height:8px;background:#2b2b2b;border-radius:8px;overflow:hidden;cursor:pointer}
+.progress-fill{width:0%;height:100%;background:linear-gradient(90deg,var(--accent),#7ef0a3)}
+.playlist-overlay { position:absolute; inset:0; display:none; align-items:flex-start; justify-content:center; padding:var(--overlay-gap); z-index:40; transition:opacity .18s ease; opacity:0; }
+.playlist-overlay .panel { width:100%; max-width:var(--overlay-panel-width); background:linear-gradient(180deg, rgba(10,10,10,0.98), rgba(6,6,6,0.98)); border-radius:10px; padding:12px; box-shadow:0 18px 40px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.03); transform:translateY(-6px) scale(.99); transition:transform .18s ease,opacity .18s ease; opacity:0; max-height:calc(100% - (var(--overlay-gap) * 2)); overflow:auto; }
+.playlist-overlay.open{ display:flex; opacity:1; }
+.playlist-overlay.open .panel{ transform:translateY(0) scale(1); opacity:1; }
+.playlist-overlay .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.playlist-overlay .title{font-size:13px;color:var(--muted)}
+.playlist-overlay .playlist-item{padding:8px;border-radius:8px;color:#ddd;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;transition:background .12s ease,color .12s ease}
+.playlist-overlay .playlist-item:hover{background:#222}
+.playlist-overlay .playlist-item.active{ background: rgba(29,185,84,0.08); color: var(--accent); font-weight:700; border-left:4px solid var(--accent); padding-left:10px; }
+.playlist-emoji { position:absolute; left:0px; top:0px; z-index:50; width:var(--emoji-size); height:var(--emoji-size); display:inline-flex; align-items:center; justify-content:center; border-radius:50%; background:rgba(255,255,255,0.06); backdrop-filter: blur(4px); cursor:pointer; font-size:20px; border:1px solid rgba(255,255,255,0.04); transition:transform .12s ease, background .12s ease; }
+.playlist-emoji:active{ transform:scale(.96); background:rgba(255,255,255,0.08); }
+
+@media (max-width: 520px) {
+  .slider-row { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 2px; padding-bottom: 6px; }
+  .slider-row input[type="range"] { width: 110px; min-width: 55px; max-width: 65px; }
+   input[type="range"] { -webkit-appearance:none; width:110px; }
+  .slider-row label { min-width: 38px; font-size: 11px; }
+  .playlist-emoji { width: 38px; height: 38px; font-size: 18px; }
+  .slider-row::-webkit-scrollbar { height: 6px; }
+  .slider-row::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 6px; }
+  .btn{padding:3px;min-width:33px;min-height:33px}
+  .btn-play{min-width:50px;min-height:50px;border-radius:11px}
+  .playlist-overlay { justify-content:flex-start; font-size: 12px; } /*change justify-content: center to left side; add back the playlist song name size to 12px */
+
+}
+
+@media (min-width: 521px) {
+  .slider-row { overflow-x: visible; flex-wrap: wrap; }
+  .slider-row input[type="range"] { width: 180px; min-width: 120px; }
+  .playlist-overlay { justify-content:flex-start; font-size: 14px; } /*change justify-content: center to left side; add back the playlist song name size to 14px */
+}
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="player-card" role="application" aria-label="Lyrics MP3 Player">
+      <div class="track-info">
+        <div class="track-title" id="displayTitle">No song loaded</div>
+        <div class="track-artist" id="displayArtist">—</div>
+        <div class="track-meta" id="displayMeta">Genre: — | Album: —</div>
+      </div>
+
+      <div class="lyrics-wrap" id="lyricsWrap">
+        <div id="btnPlaylistToggle" class="playlist-emoji" aria-expanded="false" title="Playlist">🎶</div>
+        <div class="lyrics-bg" id="lyricsBg"></div>
+        <div class="lyrics-container mode-karaoke" id="lyricsContainer">
+          <div class="lyric-line" style="margin-top:60px;color:var(--muted)">Waiting to play…</div>
+        </div>
+
+        <div id="playlistOverlay" class="playlist-overlay" aria-hidden="true" role="region" aria-label="Playlist (Overwrite)">
+          <div class="panel" role="dialog" aria-modal="false" aria-label="Playlist Panel">
+            <div class="header">
+              <div class="title">Playlist (<span id="queueCount">0</span>)</div>
+              <button id="btnCloseOverlay" class="btn" title="Close playlist" aria-label="Close playlist">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+            <div id="playlistOverlayContainer" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row slider-row" aria-hidden="false" style="margin-top:6px;">
+        <label for="bgOpacitySlider">Transparent bg</label>
+        <input id="bgOpacitySlider" type="range" min="0" max="100" value="28" aria-label="Background transparency">
+        <div style="width:8px"></div>
+        <label for="bgBlurSlider">Bg blur</label>
+        <input id="bgBlurSlider" type="range" min="0" max="20" value="0" aria-label="Background blur">
+        <div style="width:8px"></div>
+        <label for="volumeSlider">🔊</label>
+        <input id="volumeSlider" type="range" min="0" max="100" value="100" aria-label="Volume">
+      </div>
+
+      <div class="preset-row">
+        <label style="font-size:12px;color:var(--muted);min-width:72px">Preset</label>
+        <select id="presetSelect" style="background:#222;color:#fff;border-radius:8px;padding:6px;border:1px solid #333">
+          <option value="compact">Compact</option>
+          <option value="balanced" selected>Balanced</option>
+          <option value="large">Large</option>
+          <option value="photo">Photo expand</option>
+        </select>
+
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;margin-left:8px;">
+          <input id="lockLayoutSize" type="checkbox" checked />
+          <span style="font-size:12px;color:var(--muted)">Keep layout size</span>
+        </label>
+      </div>
+
+      <div class="progress-row">
+        <div id="timeCurrent" style="font-size:13px;color:var(--muted)">00:00</div>
+        <div class="progress-bar" id="progressBar" aria-label="Seek bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div id="timeTotal" style="font-size:13px;color:var(--muted)">00:00</div>
+      </div>
+
+      <div class="controls-row" role="toolbar" aria-label="Player controls">
+        <button id="btnRandom" class="btn" title="Shuffle Play" aria-pressed="false"></button>
+        <button id="btnPrev" class="btn" title="Previous"></button>
+        <button id="btnPlayPause" class="btn btn-play" title="Play/Pause" aria-pressed="false"></button>
+        <button id="btnNext" class="btn" title="Next"></button>
+        <button id="btnRepeat" class="btn" title="Loop Mode" aria-pressed="true"></button>
+        <button id="btnMode" class="btn" title="Toggle highlight mode" aria-pressed="false"></button>
+        <button id="btnSync" class="btn" title="Lyrics Synchronization" aria-pressed="true"></button>
+      </div>
+    </div>
+  </div>
+
+  <audio id="audioCore" preload="metadata"></audio>
+<script type="text/javascript" src="playlist-lrcText.js"></script>
+
+  <script>
+/* ===== PRESETS + applyPreset (early) ===== */
+var PRESETS = {
+  compact:  { layout: { lyricsHeight:'240px', lyricsPadding:'12px' }, visual: { bgSize:'contain', bgOpacity:0.6, bgBlur:'0px', lyricScale:0.95 } },
+  balanced: { layout: { lyricsHeight:'320px', lyricsPadding:'14px' }, visual: { bgSize:'contain', bgOpacity:0.7, bgBlur:'0px', lyricScale:1 } },
+  large:    { layout: { lyricsHeight:'420px', lyricsPadding:'18px' }, visual: { bgSize:'cover',   bgOpacity:0.8, bgBlur:'0px', lyricScale:1.02 } },
+  photo:    { layout: { lyricsHeight:'420px', lyricsPadding:'18px' }, visual: { bgSize:'cover',   bgOpacity:0.9, bgBlur:'0px', lyricScale:1.04 } }
+};
+var userOpacityOverride = false, userOpacityValue = null, userBlurOverride = false, userBlurValue = null;
+function applyPreset(name){
+  var p = PRESETS[name] || PRESETS.balanced;
+  var lockEl = document.getElementById('lockLayoutSize');
+  var lock = lockEl && lockEl.checked;
+
+  // Update CSS variables (visuals)
+  document.documentElement.style.setProperty('--bg-size', p.visual.bgSize);
+  document.documentElement.style.setProperty('--lyric-font-scale', p.visual.lyricScale);
+
+  // Opacity (respect user override)
+  if(!userOpacityOverride){
+    var val = (typeof p.visual.bgOpacity === 'number') ? p.visual.bgOpacity : Number(p.visual.bgOpacity) || 0.28;
+    document.documentElement.style.setProperty('--bg-opacity', val);
+    if(lyricsBg) lyricsBg.style.opacity = val;
+    var s = document.getElementById('bgOpacitySlider'); if(s) s.value = Math.round(val*100);
+  } else {
+    document.documentElement.style.setProperty('--bg-opacity', userOpacityValue);
+    if(lyricsBg) lyricsBg.style.opacity = userOpacityValue;
+    var s = document.getElementById('bgOpacitySlider'); if(s) s.value = Math.round(userOpacityValue*100);
+  }
+
+  // Blur (respect user override)
+  if(!userBlurOverride){
+    var blurVal = p.visual.bgBlur || '0px';
+    document.documentElement.style.setProperty('--bg-blur', blurVal);
+    if(lyricsBg) lyricsBg.style.filter = 'blur(' + blurVal + ')';
+    var b = document.getElementById('bgBlurSlider'); if(b) b.value = parseFloat(blurVal) || 0;
+  } else {
+    document.documentElement.style.setProperty('--bg-blur', userBlurValue + 'px');
+    if(lyricsBg) lyricsBg.style.filter = 'blur(' + userBlurValue + 'px)';
+    var b = document.getElementById('bgBlurSlider'); if(b) b.value = userBlurValue;
+  }
+
+  // LAYOUT: update both CSS var AND inline styles so change is immediate
+  // Only skip layout changes when lock is checked
+  if(!lock){
+    // Ensure values include units (presets already use 'px')
+    var heightVal = p.layout.lyricsHeight || '320px';
+    var padVal = p.layout.lyricsPadding || '14px';
+
+    // Update root var for any CSS that uses it
+    document.documentElement.style.setProperty('--lyrics-height', heightVal);
+    document.documentElement.style.setProperty('--lyrics-padding', padVal);
+
+    // Also set inline styles on the actual elements to avoid specificity issues
+    var wrap = document.getElementById('lyricsWrap');
+    var container = document.getElementById('lyricsContainer');
+    if(wrap) wrap.style.height = heightVal;
+    if(container) container.style.padding = padVal;
+  } else {
+    // If locked, keep current inline styles but still ensure root vars reflect current inline values
+    var wrap = document.getElementById('lyricsWrap');
+    var container = document.getElementById('lyricsContainer');
+    if(wrap){
+      var curH = wrap.style.height || getComputedStyle(wrap).height;
+      document.documentElement.style.setProperty('--lyrics-height', curH);
+    }
+    if(container){
+      var curP = container.style.padding || getComputedStyle(container).padding;
+      document.documentElement.style.setProperty('--lyrics-padding', curP);
+    }
+  }
+
+  // Ensure background-size applied immediately
+  if(lyricsBg) lyricsBg.style.backgroundSize = p.visual.bgSize;
+}
+
+  </script>
+
+  <script>
+/* ===== Main player script (random fix included) ===== */
+"use strict";
+
+/* DOM refs */
+var audio, lyricsContainer, lyricsBg, presetSelect, playlistOverlayContainer, bgOpacitySlider, bgBlurSlider, volumeSlider;
+var currentTrackIndex = -1;
+var isRandomPlay = false;      // IMPORTANT: this variable controls random behavior
+var isSyncEnabled = true;
+var visualMode = 0; // 0 karaoke, 1 whole-line
+var repeatMode = 1; // default repeat all
+
+/* helpers */
+function formatTimeText(totalSeconds){ var m = Math.floor(totalSeconds/60); var s = Math.floor(totalSeconds%60); return (m<10?'0'+m:m)+':'+(s<10?'0'+s:s); }
+function parseLrcString(lrcStr){ if(!lrcStr) return []; var lines = String(lrcStr).replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n'); var entries=[]; for(var i=0;i<lines.length;i++){ var raw=lines[i].trim(); if(!raw) continue; if(/^\[[a-zA-Z]+:/.test(raw)) continue; var timeMatches = raw.match(/\[(\d{1,2}:\d{2}(?:\.\d{1,3})?)\]/g); if(!timeMatches||timeMatches.length===0){ var m=raw.match(/^(\d{1,2}:\d{2}(?:\.\d{1,3})?)\s*(.*)$/); if(m){ var parts=m[1].split(':'); entries.push({startTime:parseInt(parts[0],10)*60+parseFloat(parts[1]), text:m[2]}); } continue; } var lastBracket = raw.lastIndexOf(']'); var text = raw.substring(lastBracket+1).trim(); for(var t=0;t<timeMatches.length;t++){ var tm=timeMatches[t].slice(1,-1); var parts=tm.split(':'); if(parts.length<2) continue; var min=parseInt(parts[0],10); var sec=parseFloat(parts[1]); if(isNaN(min)||isNaN(sec)) continue; var total=min*60+sec; entries.push({startTime:total, text:text}); } } entries.sort(function(a,b){return a.startTime-b.startTime}); for(var j=0;j<entries.length;j++){ entries[j].endTime = (j < entries.length - 1) ? entries[j+1].startTime : (entries[j].startTime + 5.0); } return entries; }
+
+/* sample playlist */
+/* update playlist overlay and highlight current */
+function updatePlaylistOverlay(){
+  if(!playlistOverlayContainer) return;
+  playlistOverlayContainer.innerHTML = '';
+  if(!Array.isArray(window.playlist) || window.playlist.length === 0){
+    playlistOverlayContainer.innerHTML = '<div style="color:var(--muted);padding:8px">No playlist</div>';
+    document.getElementById('queueCount').innerText = '0';
+    return;
+  }
+  document.getElementById('queueCount').innerText = window.playlist.length;
+  for(var i=0;i<window.playlist.length;i++){
+    (function(idx){
+      var t = window.playlist[idx] || {};
+      var div = document.createElement('div');
+      div.className = 'playlist-item';
+      div.id = 'overlay_item_' + idx;
+      div.setAttribute('role','button');
+      div.setAttribute('tabindex','0');
+      div.innerHTML = '<div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (t.artist||'Unknown') + ' - ' + (t.title||'Untitled') + '</div><div style="color:var(--muted);font-size:12px;margin-left:8px;">' + (t.genre||'') + '</div>';
+      if(idx === currentTrackIndex){ div.classList.add('active'); div.setAttribute('aria-current','true'); } else { div.classList.remove('active'); div.removeAttribute('aria-current'); }
+      div.addEventListener('click', function(){ loadTrack(idx); var p = audio.play(); if(p && typeof p.then === 'function'){ p.then(function(){ syncPlayButtons(true); }).catch(function(){ syncPlayButtons(false); }); } else syncPlayButtons(true); closePlaylistOverlay(); });
+      div.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); } });
+      playlistOverlayContainer.appendChild(div);
+    })(i);
+  }
+}
+
+/* render lyrics */
+function renderLyricsUI(lyricsArray){
+  if(!lyricsContainer) return;
+  lyricsContainer.innerHTML = '';
+  if(visualMode===0){ lyricsContainer.classList.add('mode-karaoke'); lyricsContainer.classList.remove('mode-whole'); }
+  else { lyricsContainer.classList.add('mode-whole'); lyricsContainer.classList.remove('mode-karaoke'); }
+  if(!lyricsArray || lyricsArray.length===0){ lyricsContainer.innerHTML = '<div style="margin-top:60px;color:var(--muted);text-align:center">🎵 There are currently no synchronized lyrics for this song. 🎵</div>'; return; }
+  for(var i=0;i<lyricsArray.length;i++){
+    (function(idx){
+      var item = lyricsArray[idx];
+      var div = document.createElement('div');
+      div.className = 'lyric-line';
+      div.id = 'lyric_line_' + idx;
+      div.innerText = item.text || '...';
+      div.style.removeProperty('--progress');
+      div.tabIndex = 0;
+      div.addEventListener('click', function(){ if(audio && audio.duration){ audio.currentTime = item.startTime; if(audio.paused){ var p = audio.play(); if(p && typeof p.then === 'function'){ p.then(function(){ syncPlayButtons(true); }).catch(function(){ syncPlayButtons(false); }); } else syncPlayButtons(true); } } });
+      div.addEventListener('keydown', function(ev){ if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); this.click(); } });
+      lyricsContainer.appendChild(div);
+    })(i);
+  }
+}
+
+/* load track */
+function loadTrack(index){
+  if(!Array.isArray(window.playlist)) return;
+  if(index < 0 || index >= window.playlist.length) return;
+  currentTrackIndex = index;
+  var track = window.playlist[index];
+  document.getElementById('displayTitle').innerText = track.title || 'Untitled';
+  document.getElementById('displayArtist').innerText = track.artist || 'Unknown';
+  document.getElementById('displayMeta').innerText = 'Genre: ' + (track.genre||'—') + ' | Album: ' + (track.album||'—');
+  if(lyricsBg) lyricsBg.style.backgroundImage = "url('" + (track.art || '') + "')";
+  isSyncEnabled = (track.sync !== undefined) ? track.sync : true;
+  var btnSync = document.getElementById('btnSync'); if(btnSync) applyToggleVisual(btnSync, isSyncEnabled, 'sync-active');
+  if(!track.parsedLyrics) track.parsedLyrics = parseLrcString(track.lrcText || '');
+  renderLyricsUI(track.parsedLyrics);
+  audio.src = track.src || '';
+  updatePlaylistOverlay();
+  syncPlayButtons(false);
+  if(lyricsContainer) lyricsContainer.scrollTop = 0;
+}
+
+/* play/pause */
+function togglePlay(){ if(!audio) return; if(!audio.src || audio.src === ''){ if(window.playlist && window.playlist.length>0) loadTrack(0); else return; } if(audio.paused){ var p = audio.play(); if(p && typeof p.then === 'function'){ p.then(function(){ syncPlayButtons(true); }).catch(function(){ syncPlayButtons(false); }); } else syncPlayButtons(true); } else { audio.pause(); syncPlayButtons(false); } }
+
+/* visual helpers */
+function applyToggleVisual(btnEl, on, className){ if(!btnEl) return; if(on){ btnEl.classList.add(className); btnEl.setAttribute('aria-pressed','true'); btnEl.style.setProperty('color', 'var(--accent)', 'important'); } else { btnEl.classList.remove(className); btnEl.setAttribute('aria-pressed','false'); btnEl.style.removeProperty('color'); } }
+
+/* sync play buttons */
+function syncPlayButtons(isPlaying){ if(typeof isPlaying === 'undefined') isPlaying = !!(audio && !audio.paused && audio.src); var bPlay = document.getElementById('btnPlayPause'); var svgPause = '<svg class="icon" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" fill="currentColor"/><rect x="14" y="4" width="4" height="16" fill="currentColor"/></svg>'; var svgPlay  = '<svg class="icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>'; if(bPlay){ bPlay.innerHTML = isPlaying ? svgPause : svgPlay; if(isPlaying) { bPlay.classList.add('play-active'); bPlay.setAttribute('aria-pressed','true'); bPlay.style.setProperty('color','var(--accent)','important'); } else { bPlay.classList.remove('play-active'); bPlay.setAttribute('aria-pressed','false'); bPlay.style.removeProperty('color'); } } }
+
+/* RANDOM: toggle and visual */
+function toggleRandom(){
+  // flip the boolean state
+  isRandomPlay = !isRandomPlay;
+  // update the button visual to reflect the new state
+  setRandomVisual(isRandomPlay);
+}
+function setRandomVisual(on){
+  var btn = document.getElementById('btnRandom');
+  if(!btn) return;
+  if(on){
+    btn.classList.add('active');
+    btn.setAttribute('aria-pressed','true');
+    btn.style.setProperty('color','var(--accent)','important');
+    // show shuffle icon filled
+    btn.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><path d="M3 3h6l6 8-6 8H3" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="20" cy="6" r="2" fill="currentColor"/><circle cx="20" cy="18" r="2" fill="currentColor"/></svg>';
+  } else {
+    btn.classList.remove('active');
+    btn.setAttribute('aria-pressed','false');
+    btn.style.removeProperty('color');
+    btn.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><path d="M3 3h6l6 8-6 8H3" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="20" cy="6" r="2" fill="currentColor"/><circle cx="20" cy="18" r="2" fill="currentColor"/></svg>';
+  }
+}
+
+/* Repeat visuals */
+function toggleRepeatMode(){ repeatMode = (repeatMode + 1) % 3; updateRepeatButtonVisual(document.getElementById('btnRepeat')); }
+function updateRepeatButtonVisual(btn){ if(!btn) return; btn.style.removeProperty('color'); if(repeatMode === 0){ btn.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><path d="M3 11h13" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>'; btn.setAttribute('aria-pressed','false'); } else if(repeatMode === 1){ btn.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M3 11v2a4 4 0 0 0 4 4h10" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>'; btn.setAttribute('aria-pressed','true'); btn.style.setProperty('color','var(--accent)','important'); } else { btn.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M3 11v2a4 4 0 0 0 4 4h6" stroke="currentColor" stroke-width="1.6" fill="none"/><text x="16" y="17" font-size="10" fill="currentColor" text-anchor="middle">1</text></svg>'; btn.setAttribute('aria-pressed','true'); btn.style.setProperty('color','var(--accent)','important'); } }
+
+/* Mode and Sync */
+function toggleVisualMode(){ visualMode = (visualMode + 1) % 2; var b = document.getElementById('btnMode'); applyToggleVisual(b, visualMode === 1, 'mode-active'); if(lyricsContainer){ if(visualMode === 1){ lyricsContainer.classList.add('mode-whole'); lyricsContainer.classList.remove('mode-karaoke'); } else { lyricsContainer.classList.add('mode-karaoke'); lyricsContainer.classList.remove('mode-whole'); } } onTimeUpdate(); }
+function toggleSync(){ isSyncEnabled = !isSyncEnabled; var b = document.getElementById('btnSync'); applyToggleVisual(b, isSyncEnabled, 'sync-active'); if(!isSyncEnabled){ if(lyricsContainer){ var lines = lyricsContainer.getElementsByClassName('lyric-line'); for(var i=0;i<lines.length;i++){ lines[i].classList.remove('active'); lines[i].style.removeProperty('--progress'); } } } else onTimeUpdate(); }
+
+/* Seek */
+function seekAudio(pct){ if(!audio || !audio.duration) return; audio.currentTime = Math.max(0, Math.min(1, pct)) * audio.duration; }
+
+/* Time update / karaoke */
+function onTimeUpdate(){
+  if(!audio) return;
+  var ct = audio.currentTime || 0;
+  var timeCur = document.getElementById('timeCurrent'); if(timeCur) timeCur.innerText = formatTimeText(Math.floor(ct));
+  if(audio.duration){ var pf = document.getElementById('progressFill'); if(pf) pf.style.width = ((ct / audio.duration) * 100) + '%'; }
+  if(!isSyncEnabled) return;
+  if(currentTrackIndex < 0) return;
+  var track = window.playlist && window.playlist[currentTrackIndex];
+  if(!track || !track.parsedLyrics || track.parsedLyrics.length===0) return;
+  var lyr = track.parsedLyrics;
+  var activeIndex = -1;
+  for(var i=0;i<lyr.length;i++){ if(ct >= lyr[i].startTime && ct < lyr[i].endTime){ activeIndex = i; break; } }
+  var lines = lyricsContainer.getElementsByClassName('lyric-line');
+  if(activeIndex === -1){ for(var k=0;k<lines.length;k++){ lines[k].classList.remove('active'); lines[k].style.removeProperty('--progress'); } return; }
+  var target = document.getElementById('lyric_line_' + activeIndex);
+  if(target && !target.classList.contains('active')){ for(var j=0;j<lines.length;j++){ lines[j].classList.remove('active'); lines[j].style.removeProperty('--progress'); } target.classList.add('active'); try{ target.scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){ target.scrollIntoView(); } }
+  if(target){ var cur = lyr[activeIndex]; var dur = Math.max(0.001, (cur.endTime - cur.startTime)); var elapsed = ct - cur.startTime; var pct = Math.min(Math.max((elapsed/dur)*100,0),100); if(visualMode === 0){ target.style.setProperty('--progress', pct + '%'); for(var m=0;m<lines.length;m++){ if(lines[m] !== target) lines[m].style.removeProperty('--progress'); } } else { target.style.setProperty('--progress','100%'); } }
+}
+
+/* Metadata and ended */
+function onLoadedMetadata(){ var t = document.getElementById('timeTotal'); if(t) t.innerText = formatTimeText(Math.floor(audio.duration || 0)); }
+function onEnded(){
+  if(repeatMode === 2){ audio.currentTime = 0; audio.play().then(function(){ syncPlayButtons(true); }).catch(function(){ syncPlayButtons(false); }); return; }
+  if(repeatMode === 1){ playNext(); return; }
+  syncPlayButtons(false);
+}
+
+/* Next / Prev (respect isRandomPlay) */
+function playNext(){
+  if(!window.playlist || window.playlist.length===0) return;
+  var next;
+  if(isRandomPlay){
+    // pick a random index different from current if possible
+    if(window.playlist.length === 1) next = currentTrackIndex;
+    else {
+      do { next = Math.floor(Math.random()*window.playlist.length); } while(next === currentTrackIndex);
+    }
+  } else {
+    next = currentTrackIndex + 1;
+    if(next >= window.playlist.length) next = 0;
+  }
+  loadTrack(next);
+  var p = audio.play();
+  if(p && typeof p.then === 'function'){ p.then(function(){ syncPlayButtons(true); }).catch(function(){ syncPlayButtons(false); }); }
+  else syncPlayButtons(true);
+}
+function playPrev(){
+  if(!window.playlist || window.playlist.length===0) return;
+  var prev;
+  if(isRandomPlay){
+    if(window.playlist.length === 1) prev = currentTrackIndex;
+    else { do { prev = Math.floor(Math.random()*window.playlist.length); } while(prev === currentTrackIndex); }
+  } else {
+    prev = currentTrackIndex - 1;
+    if(prev < 0) prev = window.playlist.length - 1;
+  }
+  loadTrack(prev);
+  var p = audio.play();
+  if(p && typeof p.then === 'function'){ p.then(function(){ syncPlayButtons(true); }).catch(function(){ syncPlayButtons(false); }); }
+  else syncPlayButtons(true);
+}
+
+/* Control icons init */
+function controlIconsInit(){
+  var bPlay = document.getElementById('btnPlayPause');
+  var bRand = document.getElementById('btnRandom');
+  var bPrev = document.getElementById('btnPrev');
+  var bNext = document.getElementById('btnNext');
+  var bRep = document.getElementById('btnRepeat');
+  var bMode = document.getElementById('btnMode');
+  var bSync = document.getElementById('btnSync');
+  if(bPlay) bPlay.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>';
+  if(bRand) { /* set initial icon; visual updated later by setRandomVisual */ bRand.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><path d="M3 3h6l6 8-6 8H3" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="20" cy="6" r="2" fill="currentColor"/><circle cx="20" cy="18" r="2" fill="currentColor"/></svg>'; }
+  if(bPrev) bPrev.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><polygon points="19 20 9 12 19 4 19 20" stroke="currentColor" stroke-width="1.6" fill="none"/><line x1="5" y1="4" x2="5" y2="20" stroke="currentColor" stroke-width="1.6"/></svg>';
+  if(bNext) bNext.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4" stroke="currentColor" stroke-width="1.6" fill="none"/><line x1="19" y1="4" x2="19" y2="20" stroke="currentColor" stroke-width="1.6"/></svg>';
+  if(bRep) bRep.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><path d="M3 11h13" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>';
+  if(bMode) bMode.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><path d="M12 2l2 4 4 2-4 2-2 4-2-4-4-2 4-2 2-4z" fill="currentColor"/></svg>';
+  if(bSync) bSync.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10" stroke="currentColor" stroke-width="1.6" fill="none"/><polyline points="1 20 1 14 7 14" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>';
+}
+
+/* export toggles */
+function exportToggles(){ window.toggleVisualMode = toggleVisualMode; window.toggleSync = toggleSync; window.toggleRepeatMode = toggleRepeatMode; window.toggleRandom = toggleRandom; }
+
+/* Wire controls */
+function wireControlEventListeners(){
+  var bPlay = document.getElementById('btnPlayPause'); if(bPlay && !bPlay._wired){ bPlay.addEventListener('click', togglePlay); bPlay._wired = true; }
+  var bNext = document.getElementById('btnNext'); if(bNext && !bNext._wired){ bNext.addEventListener('click', playNext); bNext._wired = true; }
+  var bPrev = document.getElementById('btnPrev'); if(bPrev && !bPrev._wired){ bPrev.addEventListener('click', playPrev); bPrev._wired = true; }
+  var bRand = document.getElementById('btnRandom'); if(bRand && !bRand._wired){ bRand.addEventListener('click', function(){ toggleRandom(); }); bRand._wired = true; }
+  var bRep = document.getElementById('btnRepeat'); if(bRep && !bRep._wired){ bRep.addEventListener('click', function(){ toggleRepeatMode(); }); bRep._wired = true; }
+  var bMode = document.getElementById('btnMode'); if(bMode && !bMode._wired){ bMode.addEventListener('click', function(){ toggleVisualMode(); }); bMode._wired = true; }
+  var bSync = document.getElementById('btnSync'); if(bSync && !bSync._wired){ bSync.addEventListener('click', function(){ toggleSync(); }); bSync._wired = true; }
+  var toggle = document.getElementById('btnPlaylistToggle'); if(toggle && !toggle._wired){ toggle.addEventListener('click', togglePlaylistOverlay); toggle._wired = true; }
+  var closeBtn = document.getElementById('btnCloseOverlay'); if(closeBtn && !closeBtn._wired){ closeBtn.addEventListener('click', closePlaylistOverlay); closeBtn._wired = true; }
+  var overlay = document.getElementById('playlistOverlay'); if(overlay && !overlay._wired){ overlay.addEventListener('click', function(e){ if(e.target === overlay) closePlaylistOverlay(); }); overlay._wired = true; }
+  var progressBar = document.getElementById('progressBar'); if(progressBar && !progressBar._wired){ progressBar.addEventListener('click', function(e){ var rect = this.getBoundingClientRect(); var pct = (e.clientX - rect.left) / rect.width; seekAudio(pct); }); progressBar._wired = true; }
+  var preset = document.getElementById('presetSelect'); if(preset && !preset._bound){ preset.addEventListener('change', function(e){ applyPreset(e.target.value); }); preset._bound = true; }
+  var lockLayoutCheckbox = document.getElementById('lockLayoutSize'); if(lockLayoutCheckbox && !lockLayoutCheckbox._bound){ lockLayoutCheckbox.addEventListener('change', function(){ var name = (presetSelect && presetSelect.value) ? presetSelect.value : 'balanced'; applyPreset(name); }); lockLayoutCheckbox._bound = true; }
+  bgOpacitySlider = document.getElementById('bgOpacitySlider'); if(bgOpacitySlider && !bgOpacitySlider._bound){ bgOpacitySlider.addEventListener('input', function(e){ var v = Math.max(0, Math.min(100, Number(e.target.value))); var normalized = (v/100); userOpacityOverride = true; userOpacityValue = normalized; document.documentElement.style.setProperty('--bg-opacity', normalized); if(lyricsBg) lyricsBg.style.opacity = normalized; }); bgOpacitySlider._bound = true; }
+  bgBlurSlider = document.getElementById('bgBlurSlider'); if(bgBlurSlider && !bgBlurSlider._bound){ bgBlurSlider.addEventListener('input', function(e){ var v = Math.max(0, Math.min(20, Number(e.target.value))); userBlurOverride = true; userBlurValue = v; document.documentElement.style.setProperty('--bg-blur', v + 'px'); if(lyricsBg) lyricsBg.style.filter = 'blur(' + v + 'px)'; }); bgBlurSlider._bound = true; }
+  volumeSlider = document.getElementById('volumeSlider'); if(volumeSlider && !volumeSlider._bound){ volumeSlider.addEventListener('input', function(e){ var v = Math.max(0, Math.min(100, Number(e.target.value))); if(audio) audio.volume = v/100; }); volumeSlider._bound = true; }
+}
+
+/* Overlay open/close */
+function openPlaylistOverlay(){ var overlay = document.getElementById('playlistOverlay'); if(!overlay) return; overlay.style.display = 'flex'; requestAnimationFrame(function(){ overlay.classList.add('open'); }); overlay.setAttribute('aria-hidden','false'); document.getElementById('btnPlaylistToggle').setAttribute('aria-expanded','true'); }
+function closePlaylistOverlay(){ var overlay = document.getElementById('playlistOverlay'); if(!overlay) return; overlay.classList.remove('open'); overlay.setAttribute('aria-hidden','true'); document.getElementById('btnPlaylistToggle').setAttribute('aria-expanded','false'); setTimeout(function(){ if(overlay && !overlay.classList.contains('open')) overlay.style.display = 'none'; }, 220); }
+function togglePlaylistOverlay(){ var overlay = document.getElementById('playlistOverlay'); if(!overlay) return; if(overlay.classList.contains('open')) closePlaylistOverlay(); else openPlaylistOverlay(); }
+
+/* Init */
+document.addEventListener('DOMContentLoaded', function(){
+  audio = document.getElementById('audioCore');
+  lyricsContainer = document.getElementById('lyricsContainer');
+  lyricsBg = document.getElementById('lyricsBg');
+  presetSelect = document.getElementById('presetSelect');
+  playlistOverlayContainer = document.getElementById('playlistOverlayContainer');
+
+  if(audio){ audio.ontimeupdate = onTimeUpdate; audio.onloadedmetadata = onLoadedMetadata; audio.onended = onEnded; audio.volume = 1.0; }
+
+  controlIconsInit();
+
+  // set initial visuals for repeat/random/sync/mode
+  updateRepeatButtonVisual(document.getElementById('btnRepeat'));
+  setRandomVisual(isRandomPlay); // ensure button visual matches state
+  var repBtn = document.getElementById('btnRepeat'); if(repBtn) repBtn.setAttribute('aria-pressed', repeatMode === 1 ? 'true' : 'false');
+
+  exportToggles();
+  updatePlaylistOverlay();
+  wireControlEventListeners();
+
+  document.documentElement.style.setProperty('--bg-opacity', 0.28);
+  document.documentElement.style.setProperty('--bg-blur', '0px');
+
+  applyPreset(presetSelect ? presetSelect.value : 'balanced');
+
+  if(window.playlist && window.playlist.length>0) loadTrack(0);
+});
+</script>
+</body>
+</html>
