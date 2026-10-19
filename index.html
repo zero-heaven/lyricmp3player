@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-HK">
 <head>
   <meta charset="utf-8" />
@@ -39,7 +39,7 @@ body{font-family:Inter, "Helvetica Neue", Arial, sans-serif;background:var(--bg)
 }
 .mode-whole .lyric-line.active{color:var(--accent);-webkit-text-fill-color:var(--accent);text-shadow:0 6px 18px rgba(29,185,84,0.12)}
 .row { display:flex; align-items:center; gap:12px; margin-top:10px; flex-wrap:wrap; }
-.slider-row { display:flex; align-items:center; gap:10px; }
+.slider-row { display:flex; align-items:center; gap:5px; }
 .slider-row label { font-size:12px; color:var(--muted); min-width:72px; }
 input[type="range"] { -webkit-appearance:none; height:6px; background:#2b2b2b; border-radius:6px; width:180px; }
 input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--accent); box-shadow:0 2px 6px rgba(0,0,0,0.4); cursor:pointer; }
@@ -66,22 +66,22 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px;
 
 @media (max-width: 520px) {
   .slider-row { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 4px; padding-bottom: 6px; }
-  .slider-row input[type="range"] { width: 110px; min-width: 70px; max-width: 90px; }
-   input[type="range"] { -webkit-appearance:none; width:110px; }
-  .slider-row label { min-width: 40px; font-size: 14px; }
+  .slider-row input[type="range"] { width: 110px; min-width: 60px; max-width: 90px; }
+   input[type="range"] { -webkit-appearance:none; width:100px; }
+  .slider-row label { min-width: 20px; font-size: 15px; }
   .playlist-emoji { width: 38px; height: 38px; font-size: 18px; }
   .slider-row::-webkit-scrollbar { height: 6px; }
   .slider-row::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 6px; }
   .btn{padding:3px;min-width:33px;min-height:33px}
   .btn-play{min-width:50px;min-height:50px;border-radius:11px}
-  .playlist-overlay { justify-content:flex-start; font-size: 12px; } /*change justify-content: center to left side; add back the playlist song name size to 12px */
+  .playlist-overlay { justify-content:flex-start; font-size: 11px; } /*change justify-content: center to left side; add back the playlist song name size to 12px */
 
 }
 
 @media (min-width: 521px) {
   .slider-row { overflow-x: visible; flex-wrap: wrap; }
-  .slider-row input[type="range"] { width: 180px; min-width: 120px; }
-  .slider-row label { min-width: 44px; font-size: 18px; }
+  .slider-row input[type="range"] { width: 160px; min-width: 120px; }
+  .slider-row label { min-width: 25px; font-size: 20px; }
   .playlist-overlay { justify-content:flex-start; font-size: 14px; } /*change justify-content: center to left side; add back the playlist song name size to 14px */
 }
 
@@ -118,16 +118,16 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px;
 
       <div class="row slider-row" aria-hidden="false" style="margin-top:6px;">
 
-        <label for="bgOpacitySlider" title="Background transparency">🖼️
-        <input id="bgOpacitySlider" type="range" min="0" max="100" value="28" aria-label="Background transparency" ></label>
+        <label for="bgOpacitySlider" title="Background transparency">🖼</label>️
+        <input id="bgOpacitySlider" type="range" min="0" max="100" value="28" aria-label="Background transparency" >
 
-        <div style="width:12px"></div>
-        <label for="bgBlurSlider" title="Background blur">📷
-        <input id="bgBlurSlider" type="range" min="0" max="20" value="0" aria-label="Background blur"></label>
+        <div style="width:8px"></div>
+        <label for="bgBlurSlider" title="Background blur">📷</label>
+        <input id="bgBlurSlider" type="range" min="0" max="20" value="0" aria-label="Background blur">
 
-        <div style="width:12px"></div>
-        <label for="volumeSlider" title="Volume">🔊
-        <input id="volumeSlider" type="range" min="0" max="100" value="100" aria-label="Volume"></label>
+        <div style="width:8px"></div>
+        <label for="volumeSlider" title="Volume">🔊</label>
+        <input id="volumeSlider" type="range" min="0" max="100" value="100" aria-label="Volume">
 
       </div>
 
@@ -282,7 +282,7 @@ function updatePlaylistOverlay(){
       div.id = 'overlay_item_' + idx;
       div.setAttribute('role','button');
       div.setAttribute('tabindex','0');
-      div.innerHTML = '<div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (t.artist||'Unknown') + ' - ' + (t.title||'Untitled') + '</div><div style="color:var(--muted);font-size:12px;margin-left:8px;">' + (t.genre||'') + '</div>';
+      div.innerHTML = '<div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (t.artist||'Unknown') + ' - ' + (t.title||'Untitled') + '</div>';
       if(idx === currentTrackIndex){ div.classList.add('active'); div.setAttribute('aria-current','true'); } else { div.classList.remove('active'); div.removeAttribute('aria-current'); }
       div.addEventListener('click', function(){ loadTrack(idx); var p = audio.play(); if(p && typeof p.then === 'function'){ p.then(function(){ syncPlayButtons(true); }).catch(function(){ syncPlayButtons(false); }); } else syncPlayButtons(true); closePlaylistOverlay(); });
       div.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); } });
