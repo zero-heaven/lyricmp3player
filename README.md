@@ -5,7 +5,7 @@ perfect lyric mp3player with batch convert lrc files to song lrc. easy to use ha
    and just press convert button will build a single file.<p>
 2. the file name is: playlist-lrcText.js move that file to your same directory of index.html. <p>
 3. besure both filenames (*.mp3, *.jpg, *.lrc)  are the same name and inside your mp3 folder<p>
-4. index(eng).html and batchMp3convert-to-lrcText.html are english version. you may use this to play.<p>
+4. index(cht).html / batchMp3convert-to-lrcText(cht).html are chinese Trad version.<p>
 5. support random play, repeat one/ repeat all/ no repeat, gradient green/plain green select/ no highlight, <br>
    lyric window have preset mode can choice. <br>
    default is balance mode. and default repeat is play all you can tape any line of lyric then will play begin at that point.<br>
