@@ -65,10 +65,10 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px;
 .playlist-emoji:active{ transform:scale(.96); background:rgba(255,255,255,0.08); }
 
 @media (max-width: 520px) {
-  .slider-row { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 2px; padding-bottom: 6px; }
-  .slider-row input[type="range"] { width: 110px; min-width: 55px; max-width: 65px; }
+  .slider-row { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 4px; padding-bottom: 6px; }
+  .slider-row input[type="range"] { width: 110px; min-width: 70px; max-width: 90px; }
    input[type="range"] { -webkit-appearance:none; width:110px; }
-  .slider-row label { min-width: 38px; font-size: 11px; }
+  .slider-row label { min-width: 40px; font-size: 14px; }
   .playlist-emoji { width: 38px; height: 38px; font-size: 18px; }
   .slider-row::-webkit-scrollbar { height: 6px; }
   .slider-row::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 6px; }
@@ -81,6 +81,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px;
 @media (min-width: 521px) {
   .slider-row { overflow-x: visible; flex-wrap: wrap; }
   .slider-row input[type="range"] { width: 180px; min-width: 120px; }
+  .slider-row label { min-width: 44px; font-size: 18px; }
   .playlist-overlay { justify-content:flex-start; font-size: 14px; } /*change justify-content: center to left side; add back the playlist song name size to 14px */
 }
 
@@ -116,14 +117,18 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px;
       </div>
 
       <div class="row slider-row" aria-hidden="false" style="margin-top:6px;">
-        <label for="bgOpacitySlider" title="Background transparency">🖼️</label>
-        <input id="bgOpacitySlider" type="range" min="0" max="100" value="28" aria-label="Background transparency" >
-        <div style="width:8px"></div>
-        <label for="bgBlurSlider" title="Background blur">📷</label>
-        <input id="bgBlurSlider" type="range" min="0" max="20" value="0" aria-label="Background blur">
-        <div style="width:8px"></div>
-        <label for="volumeSlider" title="Volume">🔊</label>
-        <input id="volumeSlider" type="range" min="0" max="100" value="100" aria-label="Volume">
+
+        <label for="bgOpacitySlider" title="Background transparency">🖼️
+        <input id="bgOpacitySlider" type="range" min="0" max="100" value="28" aria-label="Background transparency" ></label>
+
+        <div style="width:12px"></div>
+        <label for="bgBlurSlider" title="Background blur">📷
+        <input id="bgBlurSlider" type="range" min="0" max="20" value="0" aria-label="Background blur"></label>
+
+        <div style="width:12px"></div>
+        <label for="volumeSlider" title="Volume">🔊
+        <input id="volumeSlider" type="range" min="0" max="100" value="100" aria-label="Volume"></label>
+
       </div>
 
       <div class="preset-row">
@@ -135,9 +140,9 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px;
           <option value="photo">Pic expand</option>
         </select>
 
-        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;margin-left:8px;">
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;margin-left:8px;" title="Keep layout size">
           <input id="lockLayoutSize" type="checkbox" checked />
-          <span style="font-size:12px;color:var(--muted)">Keep layout size</span>
+          <span style="font-size:12px;color:var(--muted)">📐</span>
         </label>
       </div>
 

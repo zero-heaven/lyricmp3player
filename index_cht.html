@@ -68,7 +68,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px;
   .slider-row { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 2px; padding-bottom: 6px; }
   .slider-row input[type="range"] { width: 110px; min-width: 55px; max-width: 65px; }
    input[type="range"] { -webkit-appearance:none; width:110px; }
-  .slider-row label { min-width: 38px; font-size: 11px; }
+  .slider-row label { min-width: 40px; font-size: 14px; }
   .playlist-emoji { width: 38px; height: 38px; font-size: 18px; }
   .slider-row::-webkit-scrollbar { height: 6px; }
   .slider-row::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 6px; }
@@ -81,6 +81,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px;
 @media (min-width: 521px) {
   .slider-row { overflow-x: visible; flex-wrap: wrap; }
   .slider-row input[type="range"] { width: 180px; min-width: 120px; }
+  .slider-row label { min-width: 44px; font-size: 18px; }
   .playlist-overlay { justify-content:flex-start; font-size: 14px; } /*change justify-content: center to left side; add back the playlist song name size to 14px */
 }
 
@@ -116,14 +117,14 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px;
       </div>
 
       <div class="row slider-row" aria-hidden="false" style="margin-top:6px;">
-        <label for="bgOpacitySlider">背景透明</label>
-        <input id="bgOpacitySlider" type="range" min="0" max="100" value="28" aria-label="背景透明度">
-        <div style="width:8px"></div>
-        <label for="bgBlurSlider">背景模糊</label>
-        <input id="bgBlurSlider" type="range" min="0" max="20" value="0" aria-label="背景模糊">
-        <div style="width:8px"></div>
-        <label for="volumeSlider">音量</label>
-        <input id="volumeSlider" type="range" min="0" max="100" value="100" aria-label="音量">
+        <label for="bgOpacitySlider" title="背景透明">背景透明
+        <input id="bgOpacitySlider" type="range" min="0" max="100" value="28" aria-label="背景透明度"></label>
+        <div style="width:12px"></div>
+        <label for="bgBlurSlider" title="背景模糊">背景模糊
+        <input id="bgBlurSlider" type="range" min="0" max="20" value="0" aria-label="背景模糊"></label>
+        <div style="width:12px"></div>
+        <label for="volumeSlider" title="音量">音量
+        <input id="volumeSlider" type="range" min="0" max="100" value="100" aria-label="音量"></label>
       </div>
 
       <div class="preset-row">
@@ -132,12 +133,12 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px;
           <option value="compact">Compact</option>
           <option value="balanced" selected>Balanced</option>
           <option value="large">Large</option>
-          <option value="photo">Photo expand</option>
+          <option value="photo">Pic expand</option>
         </select>
 
-        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;margin-left:8px;">
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;margin-left:8px;" title="Keep layout size">
           <input id="lockLayoutSize" type="checkbox" checked />
-          <span style="font-size:12px;color:var(--muted)">Keep layout size</span>
+          <span style="font-size:12px;color:var(--muted)">保持版面大小</span>
         </label>
       </div>
 
