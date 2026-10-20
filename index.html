@@ -75,7 +75,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px;
   .btn{padding:3px;min-width:33px;min-height:33px}
   .btn-play{min-width:50px;min-height:50px;border-radius:11px}
   .playlist-overlay { justify-content:flex-start; font-size: 11px; } /*change justify-content: center to left side; add back the playlist song name size to 12px */
-
+  .lyrics-container{ font-size: 14px; } /* lyrics size to show */
 }
 
 @media (min-width: 521px) {
@@ -83,6 +83,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px;
   .slider-row input[type="range"] { width: 160px; min-width: 120px; }
   .slider-row label { min-width: 25px; font-size: 20px; }
   .playlist-overlay { justify-content:flex-start; font-size: 14px; } /*change justify-content: center to left side; add back the playlist song name size to 14px */
+  .lyrics-container{ font-size: 18px; } /* lyrics size to show */
 }
 
   </style>
@@ -167,6 +168,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px;
   </div>
 
   <audio id="audioCore" preload="metadata"></audio>
+
 <script type="text/javascript" src="playlist-lrcText.js"></script>
 
   <script>
@@ -189,7 +191,7 @@ function applyPreset(name){
 
   // Opacity (respect user override)
   if(!userOpacityOverride){
-    var val = (typeof p.visual.bgOpacity === 'number') ? p.visual.bgOpacity : Number(p.visual.bgOpacity) || 0.28;
+    var val = (typeof p.visual.bgOpacity === 'number') ? p.visual.bgOpacity : Number(p.visual.bgOpacity) || 0.6;
     document.documentElement.style.setProperty('--bg-opacity', val);
     if(lyricsBg) lyricsBg.style.opacity = val;
     var s = document.getElementById('bgOpacitySlider'); if(s) s.value = Math.round(val*100);
